@@ -5,6 +5,7 @@ import com.jogamp.opengl.GLCapabilities;
 import com.jogamp.opengl.GLEventListener;
 import com.jogamp.opengl.GLProfile;
 import com.jogamp.opengl.awt.GLCanvas;
+import com.jogamp.opengl.util.Animator;
 
 import java.awt.Frame;
 
@@ -48,6 +49,7 @@ public class Line implements GLEventListener {
 		final GLCanvas glcanvas = new GLCanvas(capabilities);
 		Line l = new Line();
 		Triangle t = new Triangle();
+		
 		glcanvas.addGLEventListener(l);
 		glcanvas.addGLEventListener(t);
 		glcanvas.setSize(400, 400);
@@ -58,8 +60,10 @@ public class Line implements GLEventListener {
 		//adding canvas to frame
 		frame.add(glcanvas);
 
-		frame.setSize(640, 400);
+		frame.setSize(400, 600);
 		frame.setVisible(true);
+		Animator animator = new Animator(glcanvas);
+		animator.start();
         // by default, an AWT Frame doesn't do anything when you click
         // the close button; this bit of code will terminate the program when
         // the window is asked to close
