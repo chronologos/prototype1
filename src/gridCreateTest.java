@@ -3,7 +3,6 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-
 import javax.imageio.ImageIO;
 
 
@@ -12,8 +11,8 @@ public class gridCreateTest {
   public int VIEWPORT_LENGTH = 400;
   public int OVERLAP_LENGTH = 450; // slightly larger than VIEWPORT_LENGTH
 
-  private int yLength;
-  private int xLength;
+  private int imageHeight;
+  private int imageWidth;
   private BufferedImage mainImage;
 
 
@@ -24,55 +23,86 @@ public class gridCreateTest {
 //      // TODO Auto-generated catch block
 //      e.printStackTrace();
 //    }
-//    xLength = mainImage.getWidth();
-//    yLength = mainImage.getHeight();
-	xLength = 15852;
-	yLength = 12392; // HARDCODED TEMPORARILY FOR SPEED
+//    imageWidth = mainImage.getWidth();
+//    imageHeight = mainImage.getHeight();
+	imageWidth = 15852;
+	imageHeight = 12392; // HARDCODED TEMPORARILY FOR SPEED
     this.makeGrid();
-    System.out.println("x length is " + Integer.toString(xLength) + " px.");
-    System.out.println("y length is " + Integer.toString(yLength) + " px.");
+    System.out.println("x length is " + Integer.toString(imageWidth) + " px.");
+    System.out.println("y length is " + Integer.toString(imageHeight) + " px.");
   }
   
-  private List<List<Integer>> CalculateGrids(){
-	  int currentXLength = TILELENGTH;
-	  int currentYLength = TILELENGTH;
-	  List<Integer> ycoordinates = new ArrayList<Integer>();
-	  List<Integer> xcoordinates = new ArrayList<Integer>();
-	  
+  private List<int[]> CalculateGrids(){
+	  // Calculate List Containing
+	  int currentimageWidth = TILELENGTH;
+	  int currentimageHeight = TILELENGTH;
+	  int finalColTileLength = TILELENGTH; 
+	  int finalRowTileLength = TILELENGTH;
+	  List<Integer> subImgYCoords = new ArrayList<Integer>();
+	  List<Integer> subImgXCoords = new ArrayList<Integer>();  
 	  // include 0 for both x and y coordinates
-	  xcoordinates.add(0);
-	  ycoordinates.add(0);
+	  subImgXCoords.add(0);
+	  subImgYCoords.add(0);
 	  List<int[]> coordinates = new ArrayList<int[]>();
-	  
-	  while (currentXLength < xLength){
-		  int nextXCoordinate = currentXLength - OVERLAP_LENGTH;
-		  xcoordinates.add(nextXCoordinate);
-		  currentXLength = nextXCoordinate + TILELENGTH;
-		  
+	 
+	  // tiles usually do not exactly cover image. In last row and column they will be shorter. 
+	  while (currentimageWidth < imageWidth){
+		  int nextXCoordinate = currentimageWidth - OVERLAP_LENGTH;
+		  subImgXCoords.add(nextXCoordinate);
+		  currentimageWidth = nextXCoordinate + TILELENGTH;
+		  if (currentimageWidth > imageWidth){
+			  finalRowTileLength = TILELENGTH - (currentimageWidth - imageWidth);
+		  }	  
 	  }
-	  while (currentYLength < yLength){
-		  int nextYCoordinate = currentYLength - OVERLAP_LENGTH;
-		  ycoordinates.add(nextYCoordinate);
-		  currentYLength = nextYCoordinate + TILELENGTH;
+	  while (currentimageHeight < imageHeight){
+		  int nextYCoordinate = currentimageHeight - OVERLAP_LENGTH;
+		  subImgYCoords.add(nextYCoordinate);
+		  currentimageHeight = nextYCoordinate + TILELENGTH;
+		  if (currentimageHeight > imageHeight){
+			  finalColTileLength = TILELENGTH - (currentimageHeight - imageHeight);
+		  }
 	  }
-	  for (int i = 0; i < xcoordinates.size(); i++){
-		  for (int j = 0; j < ycoordinates.size(); j++){
-			  int[] coords = {xcoordinates.get(i), ycoordinates.get(j), TILELENGTH, TILELENGTH};
+	  int xTileLength = TILELENGTH;
+	  int yTileLength = TILELENGTH;
+	  for (int i = 0; i < subImgXCoords.size(); i++){
+		  for (int j = 0; j < subImgYCoords.size(); j++){
+			  if (i == subImgXCoords.size()-1){
+				  xTileLength = finalColTileLength;  
+			  }
+			  else {
+				  xTileLength = TILELENGTH;
+			  }
+			  if (j == subImgYCoords.size()-1){
+				  // last row
+				  yTileLength = finalRowTileLength;
+				  
+			  }
+			  else {
+				  yTileLength = TILELENGTH;
+			  }
+			  int[] coords = {subImgXCoords.get(i), subImgYCoords.get(j), xTileLength, yTileLength};
 			  System.out.printf("%d %d %d %d\n", coords[0], coords[1], coords[2], coords[3]);
 			  coordinates.add(coords);
 		  }
 	  }
-	  for (int i = 0; i < coordinates.size(); i++){
-		  System.out.println(coordinates.get(i).toString());
-	  }
-	 
-	  
-	  return null;
+	  return coordinates;
   }
+  
+  private String coordinateConverter(int[] coords){
+	  // Converts int[] of xcoord, ycoord, width, height to string suitable for storing in
+	  // hashmap
+	  StringBuilder ret = new StringBuilder("");
+	  for (int i = 0; i<coords.length; i++){
+		  ret.append(Integer.toString(coords[i]));
+		  ret.append(" ");
+	  }
+	  return ret.toString();
+  }
+  
   public BufferedImage makeGrid(){
 	  this.CalculateGrids();
 	  return null;
-//    if (TILELENGTH > xLength | TILELENGTH > yLength){
+//    if (TILELENGTH > imageWidth | TILELENGTH > imageHeight){
 //      throw new Error("Tiling an image smaller than the tilesize.");
 //    }
 //    
