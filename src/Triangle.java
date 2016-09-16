@@ -1,3 +1,4 @@
+import java.awt.Frame;
 import java.awt.image.BufferedImage;
 import java.io.BufferedInputStream;
 import java.io.File;
@@ -8,8 +9,8 @@ import java.io.InputStream;
 import javax.imageio.ImageIO;
 
 import com.jogamp.opengl.*;
-import com.jogamp.opengl.GLAutoDrawable;
-import com.jogamp.opengl.GLEventListener;
+import com.jogamp.opengl.awt.GLCanvas;
+import com.jogamp.opengl.util.Animator;
 import com.jogamp.opengl.util.texture.*;
 import com.jogamp.opengl.util.texture.awt.AWTTextureIO;
 
@@ -99,5 +100,34 @@ public class Triangle implements GLEventListener {
     // method body
   }
 
+	public static void main(String[] args) {
 
+		//getting the capabilities object of GL2 profile        
+		final GLProfile profile = GLProfile.get(GLProfile.GL2);
+		GLCapabilities capabilities = new GLCapabilities(profile);
+
+		// The canvas
+		final GLCanvas glcanvas = new GLCanvas(capabilities);
+		Line l = new Line();
+		Triangle t = new Triangle();
+		
+		glcanvas.addGLEventListener(l);
+		glcanvas.addGLEventListener(t);
+		glcanvas.setSize(400, 400);
+
+		//creating frame
+		final Frame frame = new Frame ("straight Line");
+
+		//adding canvas to frame
+		frame.add(glcanvas);
+
+		frame.setSize(400, 600);
+		frame.setVisible(true);
+		Animator animator = new Animator(glcanvas);
+		animator.start();
+        // by default, an AWT Frame doesn't do anything when you click
+        // the close button; this bit of code will terminate the program when
+        // the window is asked to close
+
+	}//end of main
 }//end of classimport javax.media.opengl.GL2;
