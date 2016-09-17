@@ -15,6 +15,8 @@ import com.jogamp.opengl.util.texture.*;
 import com.jogamp.opengl.util.texture.awt.AWTTextureIO;
 import java.awt.Rectangle;
 
+import java.util.Map;
+
 public class Triangle implements GLEventListener {
   private Texture earthTexture;
   private float state = 0;
@@ -27,51 +29,48 @@ public class Triangle implements GLEventListener {
   public int numCalls;
   public long startTime;
 
+  public static final int TILE_LENGTH = 1000;
+  public static final int VIEWPORT_LENGTH = 200;
+  public static final int OVERLAP_LENGTH = 450;
+  public static final int SPEED = 1; // no.of pixels moved in each call to display, leads to movement speed of roughly 500 pixels/sec
+  
+  private Map<String, BufferedImage> subImages;
+  private int tileX = 0;
+  private int tileY = 0;
+  private int xPos = 0;
+  private int yPos = 0;
+  
+  private Transition t;
+  private gridCreateTest tiler;
   
   @Override
   public void display(GLAutoDrawable drawable) {
-    float x1 = 0;
-    float x2 = 0;
-    float y1 = 0;
-    float y2 = 0;
-    if (state != 10000 & state != 0) {
-      if (direction == 1){
-        state += 1;
-      }
-      else{
-        state -= 1;
-      }
-    }
-    else if (state == 10000){
-      
-      if (quadrant == 1 || quadrant == 3) {
-        state = 9999;
-        direction = -1;
-      }
-      else {
-        System.out.println("Reached right extreme of left subImage! Calling getNewQuadrant!");
-        getNewQuadrant(++quadrant, drawable);
-        state = 1;
-      }
-    }
-    else if (state == 0) {
-      if (quadrant == 0 || quadrant == 2) {
-            state = 1;
-            direction = 1;
-      }
-      else {
-        System.out.println("Reached left extreme of right subImage! Calling getNewQuadrant!");
-        getNewQuadrant(--quadrant, drawable);
-        state = 9999;
-      }
-    }
-    x1 = 0.55f + (state/50000);
-    x2 = 0.60f + (state/50000);
-    y1 = 0.45f;
-    y2 = 0.5f;
 
+    int tileIncrement = t.nextTile(xPos + (int)((float)VIEWPORT_LENGTH/2), yPos + (int)((float)VIEWPORT_LENGTH/2), direction, 0, tileX, tileY);
+    
+    if (tileIncrement != 0) { // New tile
+      System.out.println("Switching tiles! xPos: " + xPos + "; Tile increment: " + tileIncrement);
+      //int[] nextCoords = getNextImage(tileX, tileY, tileIncrement, drawable);
+      //xPos = nextCoords[0];
+      //yPos = nextCoords[1]; Ignore y position for now since moving only in 1-D
+      if (!getNextImage(tileX, tileY, tileIncrement, drawable)) {
+        System.out.println("Nerd Alert! Reversing!");
+        ///direction *= -1;
+      }
+    }
+    
+    if ((xPos >= backingImage.getWidth() - 1 && direction == 1) || (xPos <= 1 && direction == -1)) {
+      System.out.println("Hit end of image, reversing!");
+      direction *= -1;
+    }
+          
+    xPos += SPEED * direction;
+    
+    float x1 = (float)(xPos - tileX)/TILE_LENGTH;
+  float x2 = x1 + (float)VIEWPORT_LENGTH/TILE_LENGTH;
+    float y1 = 0.05f;
+    float y2 = 0.95f;
     render(drawable, x1, x2, y1, y2);
-//    render(drawable, 1.0f, 0.0f, 1.0f, 0.0f);
     numCalls++;
     if (System.currentTimeMillis() - startTime > 5000) {
       //System.out.println("FPS: " + (double)numCalls/((double)(System.currentTimeMillis() - startTime)/1000));
@@ -79,6 +78,28 @@ public class Triangle implements GLEventListener {
 
   }
 
+  private boolean getNextImage(int tileX, int tileY, int tileIncrement, GLAutoDrawable drawable) {
+    tileIncrement += 4;
+    int yDelta = (tileIncrement / 3) - 1;
+    int xDelta = (tileIncrement % 3) - 1;
+    int nextTileX = tileX + xDelta * TILE_LENGTH - xDelta * OVERLAP_LENGTH;
+    int nextTileY = tileY + yDelta * TILE_LENGTH - yDelta * OVERLAP_LENGTH;
+    
+    System.out.println("Current Tile X: " + this.tileX + "; " + "NextTile X : " + nextTileX);
+    
+    BufferedImage nextImage = subImages.get(gridCreateTest.coordinateConverter(new int[]{nextTileX, nextTileY, TILE_LENGTH, TILE_LENGTH}));
+    GL2 gl = drawable.getGL().getGL2();
+    if (nextImage == null) {
+      System.out.println("Nerd Alert! No image found for " + nextTileX + ", " + nextTileY);
+      return false;
+    }
+    earthTexture = AWTTextureIO.newTexture(gl.getGLProfile(), nextImage, true);
+    this.tileX = nextTileX;
+    this.tileY = nextTileY;
+    return true;
+  }
+  
+  
   private void render(GLAutoDrawable drawable, float x1, float x2, float y1, float y2) {
     GL2 gl = drawable.getGL().getGL2();
     gl.glClear(GL.GL_COLOR_BUFFER_BIT);
@@ -117,20 +138,17 @@ public class Triangle implements GLEventListener {
   public void init(GLAutoDrawable arg0) {
     GL2 gl = arg0.getGL().getGL2();
     try {
-      //File f = new File("lib/10MB.jpg");
-    //  File f = new File("lib/testimage1.JPG");
       File f = new File("lib/LargeImage.jpg");
       boolean exists = f.exists(); 
       BufferedImage bufferedImage = ImageIO.read(f);
       backingImage = bufferedImage;
       System.out.println(exists);
-      //      InputStream stream = new BufferedInputStream(new FileInputStream("testimage1.JPG"));
-      
-      //BufferedImage subImage = bufferedImage.getData(new Rectangle(bufferedImage.getWidth()/2, bufferedImage.getHeight()/2));
-      BufferedImage subImage = bufferedImage.getSubimage(0, 0, bufferedImage.getWidth()/2, bufferedImage.getHeight()/2);
-      
-      //earthTexture = AWTTextureIO.newTexture(gl.getGLProfile(), bufferedImage, true);
-      earthTexture = AWTTextureIO.newTexture(gl.getGLProfile(), subImage, true);
+      tiler = new gridCreateTest(backingImage, TILE_LENGTH, VIEWPORT_LENGTH, OVERLAP_LENGTH); // Precomputing of tiles is complete
+      subImages = tiler.makeGrid();
+      t = new Transition(OVERLAP_LENGTH, VIEWPORT_LENGTH, TILE_LENGTH);
+      String startTileKey = gridCreateTest.coordinateConverter(new int[]{0,0, TILE_LENGTH, TILE_LENGTH});
+      BufferedImage startImage = subImages.get(startTileKey);
+      earthTexture = AWTTextureIO.newTexture(gl.getGLProfile(), startImage, true);
       
       a = new Animator(arg0);
     a.start();
@@ -162,19 +180,16 @@ public class Triangle implements GLEventListener {
     
     glcanvas.addGLEventListener(l);
     glcanvas.addGLEventListener(t);
-    glcanvas.setSize(400, 400);
+    glcanvas.setSize(VIEWPORT_LENGTH, VIEWPORT_LENGTH);
 
     //creating frame
     final Frame frame = new Frame ("straight Line");
 
     
-    
-    
-    
     //adding canvas to frame
     frame.add(glcanvas);
-
-    frame.setSize(400, 600);
+    frame.setSize(glcanvas.getWidth(), glcanvas.getHeight());
+    //frame.setSize(400, 600);
     frame.setVisible(true);
     //Animator animator = new Animator(glcanvas);
     
