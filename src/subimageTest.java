@@ -2,14 +2,9 @@ import java.awt.image.BufferedImage;
 import java.awt.image.DataBuffer;
 import java.io.File;
 import java.io.IOException;
-
 import javax.imageio.ImageIO;
 
-
-
-public class subimageTest {
-
-
+public class SubimageTest {
   public static void main(String[] args) {
     try {
       File f = new File("hs-2006-10-a-full_jpg.jpg"); 

@@ -32,7 +32,9 @@ public class Transition {
 		else if (yDir < 0 && yTileOffset < overlap - (float)(viewportLength)/2) {
 			nextY = -1;
 		}
-		System.out.println("NextX: " + nextX + "; NextY: " + nextY);
+		if (nextX != 0 & nextY != 0){
+			System.out.println("NextX: " + nextX + "; NextY: " + nextY);
+		}
 		return nextY * 3 + nextX;
 	}
 		

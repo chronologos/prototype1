@@ -1,11 +1,7 @@
 import java.awt.Frame;
 import java.awt.image.BufferedImage;
-import java.io.BufferedInputStream;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStream;
-
 import javax.imageio.ImageIO;
 
 import com.jogamp.opengl.*;
@@ -13,24 +9,22 @@ import com.jogamp.opengl.awt.GLCanvas;
 import com.jogamp.opengl.util.Animator;
 import com.jogamp.opengl.util.texture.*;
 import com.jogamp.opengl.util.texture.awt.AWTTextureIO;
-import java.awt.Rectangle;
-
 import java.util.Map;
 
-public class Triangle implements GLEventListener {
+public class Prototype implements GLEventListener {
   private Texture earthTexture;
-  private float state = 0;
   private int direction = 1;
   
-  private int quadrant = 0;
   private BufferedImage backingImage;
+  private int backingImgWidth;
+  private int backingImgHeight;
   
   private Animator a;
   public int numCalls;
   public long startTime;
 
   public static final int TILE_LENGTH = 1000;
-  public static final int VIEWPORT_LENGTH = 200;
+  public static final int VIEWPORT_LENGTH = 400;
   public static final int OVERLAP_LENGTH = 450;
   public static final int SPEED = 1; // no.of pixels moved in each call to display, leads to movement speed of roughly 500 pixels/sec
   
@@ -38,11 +32,11 @@ public class Triangle implements GLEventListener {
   private int tileX = 0;
   private int tileY = 0;
   private int xPos = 0;
-  private int yPos = 0;
+  private int yPos = 5000;
   
   private Transition t;
-  private gridCreateTest tiler;
-  
+  private GridCreateTest tiler;
+  private GL2 gl;
   @Override
   public void display(GLAutoDrawable drawable) {
 
@@ -59,7 +53,7 @@ public class Triangle implements GLEventListener {
       }
     }
     
-    if ((xPos >= backingImage.getWidth() - 1 && direction == 1) || (xPos <= 1 && direction == -1)) {
+    if ((xPos >= backingImgWidth - 1 && direction == 1) || (xPos <= 1 && direction == -1)) {
       System.out.println("Hit end of image, reversing!");
       direction *= -1;
     }
@@ -67,7 +61,7 @@ public class Triangle implements GLEventListener {
     xPos += SPEED * direction;
     
     float x1 = (float)(xPos - tileX)/TILE_LENGTH;
-  float x2 = x1 + (float)VIEWPORT_LENGTH/TILE_LENGTH;
+    float x2 = x1 + (float)VIEWPORT_LENGTH/TILE_LENGTH;
     float y1 = 0.05f;
     float y2 = 0.95f;
     render(drawable, x1, x2, y1, y2);
@@ -87,13 +81,16 @@ public class Triangle implements GLEventListener {
     
     System.out.println("Current Tile X: " + this.tileX + "; " + "NextTile X : " + nextTileX);
     
-    BufferedImage nextImage = subImages.get(gridCreateTest.coordinateConverter(new int[]{nextTileX, nextTileY, TILE_LENGTH, TILE_LENGTH}));
-    GL2 gl = drawable.getGL().getGL2();
+    BufferedImage nextImage = subImages.get(GridCreateTest.coordinateConverter(new int[]{nextTileX, nextTileY, TILE_LENGTH, TILE_LENGTH}));
+    System.out.println(nextImage);
+//    GL2 gl = drawable.getGL().getGL2();
     if (nextImage == null) {
       System.out.println("Nerd Alert! No image found for " + nextTileX + ", " + nextTileY);
       return false;
     }
     earthTexture = AWTTextureIO.newTexture(gl.getGLProfile(), nextImage, true);
+    earthTexture.enable(gl);
+    earthTexture.bind(gl);
     this.tileX = nextTileX;
     this.tileY = nextTileY;
     return true;
@@ -101,7 +98,7 @@ public class Triangle implements GLEventListener {
   
   
   private void render(GLAutoDrawable drawable, float x1, float x2, float y1, float y2) {
-    GL2 gl = drawable.getGL().getGL2();
+    gl = drawable.getGL().getGL2();
     gl.glClear(GL.GL_COLOR_BUFFER_BIT);
     gl.glEnable(GL.GL_TEXTURE_2D);
     earthTexture.enable(gl);
@@ -125,8 +122,6 @@ public class Triangle implements GLEventListener {
     BufferedImage subImage = backingImage.getSubimage((quadrant % 2) * backingImage.getWidth()/2, (quadrant/2) * backingImage.getHeight()/2, backingImage.getWidth()/2, backingImage.getHeight()/2);
     GL2 gl = drawable.getGL().getGL2();
     earthTexture = AWTTextureIO.newTexture(gl.getGLProfile(), subImage, true);
-
-    
   }
 
   @Override
@@ -136,24 +131,24 @@ public class Triangle implements GLEventListener {
 
   @Override
   public void init(GLAutoDrawable arg0) {
-    GL2 gl = arg0.getGL().getGL2();
+    gl = arg0.getGL().getGL2();
     try {
-      File f = new File("lib/LargeImage.jpg");
+      File f = new File("hs-2006-10-a-full_jpg.jpg");
       boolean exists = f.exists(); 
       BufferedImage bufferedImage = ImageIO.read(f);
       backingImage = bufferedImage;
-      System.out.println(exists);
-      tiler = new gridCreateTest(backingImage, TILE_LENGTH, VIEWPORT_LENGTH, OVERLAP_LENGTH); // Precomputing of tiles is complete
-      subImages = tiler.makeGrid();
+      backingImgWidth = backingImage.getWidth();
+      tiler = new GridCreateTest(backingImage, TILE_LENGTH, VIEWPORT_LENGTH, OVERLAP_LENGTH); // Precomputing of tiles is complete
+      subImages = tiler.makeGrid(); // map of tile coordinates to subimages
       t = new Transition(OVERLAP_LENGTH, VIEWPORT_LENGTH, TILE_LENGTH);
-      String startTileKey = gridCreateTest.coordinateConverter(new int[]{0,0, TILE_LENGTH, TILE_LENGTH});
+      String startTileKey = GridCreateTest.coordinateConverter(new int[]{0,0, TILE_LENGTH, TILE_LENGTH});
       BufferedImage startImage = subImages.get(startTileKey);
       earthTexture = AWTTextureIO.newTexture(gl.getGLProfile(), startImage, true);
       
       a = new Animator(arg0);
-    a.start();
-    numCalls = 0;
-    startTime = System.currentTimeMillis();
+      a.start();
+      numCalls = 0;
+      startTime = System.currentTimeMillis();
     }
     catch (IOException exc) {
       exc.printStackTrace();
@@ -176,7 +171,7 @@ public class Triangle implements GLEventListener {
     // The canvas
     final GLCanvas glcanvas = new GLCanvas(capabilities);
     Line l = new Line();
-    Triangle t = new Triangle();
+    Prototype t = new Prototype();
     
     glcanvas.addGLEventListener(l);
     glcanvas.addGLEventListener(t);

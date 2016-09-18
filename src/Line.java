@@ -48,7 +48,7 @@ public class Line implements GLEventListener {
 		// The canvas
 		final GLCanvas glcanvas = new GLCanvas(capabilities);
 		Line l = new Line();
-		Triangle t = new Triangle();
+		Prototype t = new Prototype();
 		
 		glcanvas.addGLEventListener(l);
 		glcanvas.addGLEventListener(t);
