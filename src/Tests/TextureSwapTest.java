@@ -1,3 +1,4 @@
+package Tests;
 import java.awt.FlowLayout;
 import java.awt.Frame;
 import java.awt.image.BufferedImage;
@@ -14,6 +15,9 @@ import com.jogamp.opengl.awt.GLCanvas;
 import com.jogamp.opengl.util.Animator;
 import com.jogamp.opengl.util.texture.*;
 import com.jogamp.opengl.util.texture.awt.AWTTextureIO;
+
+import Transition;
+
 import java.util.Map;
 import java.util.Random;
 
@@ -41,7 +45,7 @@ public class TextureSwapTest implements GLEventListener {
   private int yPos = 0;
   
   private Transition t;
-  private GridCreateTest tiler;
+  private Tiler tiler;
   @Override
   public void display(GLAutoDrawable drawable) {
 	GL2 gl = drawable.getGL().getGL2();

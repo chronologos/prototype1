@@ -67,8 +67,8 @@ class ImageTiler(object):
     def crop(self):
         for coordinate in self.coordinates:
             x_coord, y_coord, width, height = coordinate
-            filename = str(x_coord) + "_" + str(y_coord) + "_" + \
-                str(width) + "_" + str(height) + ".png"
+            filename = str(x_coord) + " " + str(y_coord) + " " + \
+                str(width) + " " + str(height) + ".jpg"
             path = os.path.join(os.getcwd(), "tiles", filename)
             print path
             box = (x_coord, y_coord, x_coord + width, y_coord + height)
@@ -76,6 +76,6 @@ class ImageTiler(object):
 
 if __name__ == "__main__":
     # NOTE: Change this!!
-    Tiler = ImageTiler(1000, 450, "Periodic_table_large.png")
+    Tiler = ImageTiler(1000, 450, "hs-2006-10-a-full_jpg.jpg")
     Tiler.ComputeCoordinates()
     Tiler.crop()

@@ -1,3 +1,4 @@
+package Tests;
 import java.awt.FlowLayout;
 import java.awt.image.BufferedImage;
 import java.io.File;
@@ -26,7 +27,7 @@ public class DisplayImage {
     	File f = new File("hs-2006-10-a-full_jpg.jpg"); 
         boolean exists = f.exists(); 
         BufferedImage bufferedImage = ImageIO.read(f);
-    	GridCreateTest GCT = new GridCreateTest(bufferedImage, 1000, 400, 450);  
+    	Tiler GCT = new Tiler(bufferedImage, 1000, 400, 450);  
     	Map<String, BufferedImage> images = GCT.makeGrid();
         for (Map.Entry<String, BufferedImage> entry : images.entrySet()){
         	

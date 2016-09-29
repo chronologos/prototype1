@@ -1,3 +1,4 @@
+package Tests;
 import com.jogamp.newt.event.WindowAdapter;
 import com.jogamp.opengl.GL2;
 import com.jogamp.opengl.GLAutoDrawable;
@@ -6,6 +7,8 @@ import com.jogamp.opengl.GLEventListener;
 import com.jogamp.opengl.GLProfile;
 import com.jogamp.opengl.awt.GLCanvas;
 import com.jogamp.opengl.util.Animator;
+
+import Prototype;
 
 import java.awt.Frame;
 
