@@ -30,18 +30,21 @@ public class Prototype implements GLEventListener {
   private Animator a;
   public int numCalls;
   public long startTime;
-  public static final int TILE_LENGTH = 1500;
+  public static final int TILE_LENGTH = 1000;
   public static final int VIEWPORT_LENGTH = 400;
   public static final int OVERLAP_LENGTH = 450;
   public static final int SPEED = 1; // no.of pixels moved in each call to display, leads to movement speed of roughly 500 pixels/sec
   
-  private Map<String, BufferedImage> subImages;
+  //private Map<String, BufferedImage> subImages;
+  
+  private Map<String, Texture> subTextures;
+  
   private int tileX = 0;
   private int tileY = 0;
   private int xPos = 0;
   private int yPos = 0;
   
-  //private int buffer = 500;
+  private int corners = 0;
   
   private Transition t;
   private GridCreateTest tiler;
@@ -49,43 +52,55 @@ public class Prototype implements GLEventListener {
   public void display(GLAutoDrawable drawable) {
   GL2 gl = drawable.getGL().getGL2();
 
+  if (t == null) t = new Transition(OVERLAP_LENGTH, VIEWPORT_LENGTH, TILE_LENGTH);
+  
     int tileIncrement = t.nextTile(xPos + (int)((float)VIEWPORT_LENGTH/2), yPos + (int)((float)VIEWPORT_LENGTH/2), xDirection, yDirection, tileX, tileY);
     
     if (tileIncrement != 0) { // New tile
       System.out.println("Switching tiles! xPos: " + xPos + "; Tile increment: " + tileIncrement);
-      //int[] nextCoords = getNextImage(tileX, tileY, tileIncrement, drawable);
-      //xPos = nextCoords[0];
-      //yPos = nextCoords[1]; Ignore y position for now since moving only in 1-D
       if (!getNextImage(tileX, tileY, tileIncrement, drawable, gl)) {
         System.out.println("Nerd Alert! Reversing!");
-        ///direction *= -1;
       }
     }
     
-    //if (xPos >= backingImgWidth - 1 && xDirection == 1) {
-    if (xPos + TILE_LENGTH >= backingImgWidth - 1 && xDirection == 1) {
+    if (xPos + TILE_LENGTH >= backingImgWidth - SPEED && xDirection == 1) {
       System.out.println("Hit right end of image, reversing!");
-        //direction *= -1;
-        xDirection = 0;
+        if (++corners % 4 == 0) {
+          xDirection *= -1;
+        }
+        else {
+          xDirection = 0;
+        }
         yDirection = 1;
       }
       
-      //if (xPos <= 1 && xDirection == -1) {
-    if (xPos - TILE_LENGTH <= 1 && xDirection == -1) {
-        xDirection = 0;
+    if (xPos - TILE_LENGTH <= SPEED && xDirection == -1) {
+        if (++corners % 4 == 0) {
+          xDirection *= -1;
+        }
+        else {
+          xDirection = 0;
+        }
         yDirection = -1;
       }
       
-            
-      //if (yPos >= backingImgHeight - 1 && yDirection == 1) {
-    if (yPos + TILE_LENGTH >= backingImgHeight - 1 && yDirection == 1) {
-        yDirection = 0;
+    if (yPos + TILE_LENGTH >= backingImgHeight - SPEED && yDirection == 1) {
+        if (++ corners % 4 == 0) {
+          yDirection *= -1;
+        }
+        else {
+          yDirection = 0;
+        }
         xDirection = -1;
       }
       
-      //if (yPos <= 1 && yDirection == -1) {
-    if (yPos - TILE_LENGTH <= 1 && yDirection == -1) {
-        yDirection = 0;
+    if (yPos - TILE_LENGTH <= SPEED && yDirection == -1) {
+        if (++ corners % 4 == 0) {
+          yDirection *= -1;
+        }
+        else {
+          yDirection = 0;
+        }
         xDirection = 1;
       }
       
@@ -98,11 +113,6 @@ public class Prototype implements GLEventListener {
       float y2 = y1 + (float)VIEWPORT_LENGTH/TILE_LENGTH;
 
     render(drawable, x1, x2, y1, y2, gl);
-//    numCalls++;
-//    if (System.currentTimeMillis() - startTime > 5000) {
-      //System.out.println("FPS: " + (double)numCalls/((double)(System.currentTimeMillis() - startTime)/1000));
-//    }
-
   }
 
   private boolean getNextImage(int tileX, int tileY, int tileIncrement, GLAutoDrawable drawable, GL2 gl) {
@@ -127,11 +137,6 @@ public class Prototype implements GLEventListener {
     }
     else if (nextTileX < 0){
       return false;
-      /*
-       xDirection *= -1;
-       curXTileWidth = TILE_LENGTH;
-       nextTileX = 0;
-       */
     }
     else{
       curXTileWidth = TILE_LENGTH;
@@ -139,8 +144,6 @@ public class Prototype implements GLEventListener {
     int curYTileHeight;
     
     if (nextTileY + TILE_LENGTH > backingImgHeight) {
-    //if (nextTileY > tiler.getMaxTileY()) {
-      
       System.out.println("Next TileY: " + nextTileY + "; Setting next tile height to " + (backingImgHeight - nextTileY));
       curYTileHeight = backingImgHeight - nextTileY;
     }
@@ -152,12 +155,8 @@ public class Prototype implements GLEventListener {
     }
     String imgKey = tiler.coordinateConverter(new int[]{nextTileX, nextTileY, curXTileWidth, curYTileHeight});
     System.out.println("Key for next image: " + imgKey);
-    BufferedImage nextImage = subImages.get(imgKey);
-    System.out.println(nextImage);
-
-    CurrentTexture = AWTTextureIO.newTexture(gl.getGLProfile(), nextImage, true);
-    System.out.println(nextImage);
-    System.out.println(CurrentTexture.getTarget());
+    
+    CurrentTexture = subTextures.get(imgKey);
     System.out.println("---");
     
     this.tileX = nextTileX;
@@ -169,7 +168,6 @@ public class Prototype implements GLEventListener {
   private void render(GLAutoDrawable drawable, float x1, float x2, float y1, float y2, GL2 gl) {
   gl.glClear(GL2.GL_COLOR_BUFFER_BIT | GL2.GL_DEPTH_BUFFER_BIT);
     gl.glEnable(GL.GL_TEXTURE_2D);
-//    earthTexture.enable(gl);
     CurrentTexture.bind(gl);
     gl.glBegin(GL2.GL_QUADS);
     gl.glTexCoord2f(x2, y1); // bot right
@@ -201,25 +199,44 @@ public class Prototype implements GLEventListener {
   
     GL2 gl = arg0.getGL().getGL2();
     try {
-      //File f = new File("Periodic_table_large.png");
-      File f = new File("lib/periodic_table.png");
-      //      File f = new File("1999-fletcher-watermanhills.png");
-//      File f = new File("hs-2006-10-a-full_png.png");
-//      File f = new File("WORLD.png");
-
+      File f = new File("lib/LargeImage.jpg");
+      //File f = new File("lib/imgFiles/0 0 1000 1000.jpg");
+      
+      //File f = new File("lib/periodic_table.png");
+      
 //      boolean exists = f.exists(); 
       BufferedImage bufferedImage = ImageIO.read(f);
       backingImage = bufferedImage;
       backingImgWidth = backingImage.getWidth();
       backingImgHeight = backingImage.getHeight();
       tiler = new GridCreateTest(backingImage, TILE_LENGTH, VIEWPORT_LENGTH, OVERLAP_LENGTH); // Precomputing of tiles is complete
-      subImages = tiler.makeGrid(); // map of tile coordinates to subimages
-      System.out.println(subImages);
+      //subImages = tiler.makeGrid(); // map of tile coordinates to subimages
+      
+      //subTextures = tiler.makeGrid(arg0);
+      subTextures = tiler.makeGridFiles(arg0);
+      
+      System.out.println("Constructing new textures");
+      //subTextures = new HashMap<String, Texture>();
+      
+      /*
+      for (String key : subImages.keySet()) {
+        subTextures.put(key, AWTTextureIO.newTexture(gl.getGLProfile(), subImages.get(key), true));
+      }
+      */
+      
+      
+      
       t = new Transition(OVERLAP_LENGTH, VIEWPORT_LENGTH, TILE_LENGTH);
       String startTileKey = tiler.coordinateConverter(new int[]{0,0, TILE_LENGTH, TILE_LENGTH});
-      BufferedImage startImage = subImages.get(startTileKey);
-      CurrentTexture = AWTTextureIO.newTexture(gl.getGLProfile(), startImage, true);
+      //BufferedImage startImage = subImages.get(startTileKey);
+      
+      
+      //CurrentTexture = AWTTextureIO.newTexture(gl.getGLProfile(), startImage, true);
+      CurrentTexture = subTextures.get(startTileKey);
       CurrentTexture.enable(gl);
+      System.out.println("Initialized and enabled current texture");
+      
+      //final FPSAnimator animator = new FPSAnimator(arg0, (int)((float)(180)/SPEED));
       final FPSAnimator animator = new FPSAnimator(arg0, 180);
       animator.start();
 //      numCalls = 0;
@@ -335,18 +352,64 @@ public class Prototype implements GLEventListener {
       return bob.toString();
     }
     
-    public Map<String, BufferedImage> makeGrid(){
+    //public Map<String, BufferedImage> makeGrid(){
+    public Map<String, Texture> makeGrid(GLAutoDrawable drawable) {
       // Using coordinates from CalculateGrids, Generate hashmap of subimages.
       List<int[]> allCoords = CalculateGrids();
       String key = null;
       BufferedImage subImage = null;
+      Texture subTexture = null;
+      
+//      Map<String, BufferedImage> mySubImages = new HashMap<String, BufferedImage>();
+      Map<String, Texture> mySubTextures = new HashMap<String, Texture>();
+      
+      GL2 gl = drawable.getGL().getGL2();
+      
       for (int[] coords : allCoords) {
         key = coordinateConverter(coords);
-        subImage = mainImage.getSubimage(coords[0], coords[1], coords[2], coords[3]);
-        subImages.put(key, subImage);
+        subImage = mainImage.getSubimage(coords[0], coords[1], coords[2], coords[3]);  
+        //mySubImages.put(key, subImage);
+        subTexture = AWTTextureIO.newTexture(gl.getGLProfile(), subImage, true);
+        mySubTextures.put(key, subTexture);
       }
-      return subImages;
+      //return mySubImages;
+      return mySubTextures;
     }
+    
+    // Approach 2 - Partitioning the original image file into multiple files (Runs into out of memory problem...)
+    //public Map<String, BufferedImage> makeGridFiles(){
+    public Map<String, Texture> makeGridFiles(GLAutoDrawable drawable) {
+      // Using coordinates from CalculateGrids, Generate hashmap of subimages.
+      List<int[]> allCoords = CalculateGrids();
+      String key = null;
+      BufferedImage subImage = null;
+      File subImageFile = null;
+      Texture subTexture = null;
+      
+      //Map<String, BufferedImage> mySubImages = new HashMap<String, BufferedImage>();
+      Map<String, Texture> mySubTextures = new HashMap<String, Texture>();
+      
+      GL2 gl = drawable.getGL().getGL2();
+      
+      for (int[] coords : allCoords) {
+        key = coordinateConverter(coords);
+        subImageFile = new File("lib/imgFiles/" + key + ".jpg");
+//        System.out.println("File exists? " + subImageFile.exists());
+        try {
+          subImage = ImageIO.read(subImageFile);
+          subTexture = AWTTextureIO.newTexture(gl.getGLProfile(), subImage, true);
+          //mySubImages.put(key, subImage);
+          mySubTextures.put(key, subTexture);
+        }
+        catch (IOException e) {
+          System.out.println("GG I fucked up");
+          System.exit(1);
+        }
+      }
+      //return mySubImages;
+      return mySubTextures;
+    }
+    
     
     public int getMaxTileX() {
       return maxTileX;
@@ -376,12 +439,6 @@ public class Prototype implements GLEventListener {
     frame.setSize(glcanvas.getWidth(), glcanvas.getHeight());
     //frame.setSize(400, 600);
     frame.setVisible(true);
-    //Animator animator = new Animator(glcanvas);
-    
-      // by default, an AWT Frame doesn't do anything when you click
-      // the close button; this bit of code will terminate the program when
-      // the window is asked to close
-    
 
   }//end of main
 
